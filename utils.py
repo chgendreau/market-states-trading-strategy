@@ -36,3 +36,4 @@ def plot_recdf(logrets):
 
 
 #do other stylized facts functions
+print('liu')
