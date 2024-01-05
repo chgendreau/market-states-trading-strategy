@@ -34,9 +34,3 @@ def plot_recdf(logrets):
     plt.title("Reciprocal ECDF of log returns")
     plt.show()
 
-
-#do other stylized facts functions
-print('hello world')
-
-#print Charles
-print('Charles')
