@@ -6,6 +6,7 @@ import glob
 import re
 import os
 import vaex
+import dask
 
 
 #Defining functions to clean timestamp of multiple files
@@ -31,6 +32,7 @@ def upload_clean_data(data_folder_path, dask_cores = 8):
     allfiles = glob.glob(data_folder_path + "/*")
     return None
 
+#@dask.delayed
 def load_TRTH_trade(filename,
              tz_exchange="America/New_York",
              only_non_special_trades=True,
@@ -83,6 +85,7 @@ def load_TRTH_trade(filename,
     
     return DF
 
+#@dask.delayed
 def load_TRTH_bbo(filename,
              tz_exchange="America/New_York",
              only_regular_trading_hours=True,
@@ -126,7 +129,7 @@ def load_TRTH_bbo(filename,
         
     return DF
 
-
+#@dask.delayed
 def load_merge_trade_bbo(ticker,date,
                          country="US",
                          dirBase="data/raw/equities/",
@@ -208,7 +211,7 @@ def get_all_dates(ticker, dirBase = "data/raw/equities/", country = "US"):
 
     return dates
 
-
+#@dask.delayed
 def load_all_dates(ticker, start_date = pd.to_datetime('2004-01-01'), end_date = pd.to_datetime('2023-12-31'), country = "US", dirBase="data/raw/equities/", suffix="parquet", suffix_save=None, dirSaveBase="data/clean/equities/events", saveOnly=False, doSave=False):
     """
     Loads all data from start_date to end_date for a given ticker
@@ -219,28 +222,36 @@ def load_all_dates(ticker, start_date = pd.to_datetime('2004-01-01'), end_date =
     all_events = pd.DataFrame()
     
     all_dates = get_all_dates(ticker, dirBase = dirBase, country = country)
-    for date in all_dates:
-        events = load_merge_trade_bbo(ticker, date, country = country, dirBase = dirBase, suffix = suffix, suffix_save = suffix_save, dirSaveBase = dirSaveBase, saveOnly = saveOnly, doSave = doSave)
-        all_events = pd.concat([all_events, events], axis = 0)
+    all_dates = [date for date in all_dates if date >= start_date and date <= end_date]
+    allpromises=[load_merge_trade_bbo(ticker, date, country = country, dirBase = dirBase, suffix = suffix, suffix_save = suffix_save, dirSaveBase = dirSaveBase, saveOnly = saveOnly, doSave = doSave) for date in all_dates]
+    #for date in all_dates:
+        #events = load_merge_trade_bbo(ticker, date, country = country, dirBase = dirBase, suffix = suffix, suffix_save = suffix_save, dirSaveBase = dirSaveBase, saveOnly = saveOnly, doSave = doSave)
+        #all_events = pd.concat([all_events, events], axis = 0)
+    all_events = dask.compute(*allpromises)
+    all_events = pd.concat(all_events, axis = 0)
     
     return all_events
 
+@dask.delayed
 def load_all(start_date = pd.to_datetime('2004-01-01'), end_date = pd.to_datetime('2023-12-31'), tickers:list = None, country = "US", dirBase="data/raw/equities/", suffix="parquet", suffix_save=None, dirSaveBase="data/clean/equities/events", saveOnly=False, doSave=False):
     """
-    Loads all data from start_date to end_date
+    Loads all data from start_date to end_date  
     
     If tickers is None, loads all the data available
     If tickers is a list of tickers, loads only those tickers
     
     Returns: Pandas dataframe with all the events for all tickers and the given days
     """
-    all_events = pd.DataFrame()
+    delayed_events_list = []
     if tickers is None:
         all_tickers = get_all_tickers(dirBase = dirBase, country = country)
     else:
         all_tickers = tickers
     for ticker in all_tickers:
-        events = load_all_dates(ticker = ticker, start_date=start_date, end_date = end_date, country = country, dirBase = dirBase, suffix = suffix, suffix_save = suffix_save, dirSaveBase = dirSaveBase, saveOnly = saveOnly, doSave = doSave)
-        all_events = pd.concat([all_events, events], axis = 0)
+        delayed_event = load_all_dates(ticker = ticker, start_date=start_date, end_date = end_date, country = country, dirBase = dirBase, suffix = suffix, suffix_save = suffix_save, dirSaveBase = dirSaveBase, saveOnly = saveOnly, doSave = doSave)
+        delayed_events_list.append(delayed_event)
+    
+    events = dask.compute(*delayed_events_list)
+    all_events = pd.concat(events, axis = 0)
 
     return all_events
