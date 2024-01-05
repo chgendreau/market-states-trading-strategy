@@ -34,3 +34,38 @@ def plot_recdf(logrets):
     plt.title("Reciprocal ECDF of log returns")
     plt.show()
 
+def compute_C_minus_C0(lambdas,v,lambda_plus,removeMarketMode=True):
+    N=len(lambdas)
+    C_clean=np.zeros((N, N))
+    
+    order = np.argsort(lambdas)
+    lambdas,v = lambdas[order],v[:,order]
+    
+    v_m=np.matrix(v)
+
+    # note that the eivenvalues are sorted
+    for i in range(1*removeMarketMode,N):                            
+        if lambdas[i]>lambda_plus: 
+            C_clean=C_clean+lambdas[i] * np.dot(v_m[:,i],v_m[:,i].T)  
+    return C_clean   
+
+def LouvainCorrelationClustering(R):   # R is a matrix of return
+    N=R.shape[1]
+    T=R.shape[0]
+
+    q=N*1./T
+    lambda_plus=(1.+np.sqrt(q))**2
+
+    C=R.corr()
+    lambdas, v = LA.eigh(C)
+
+
+            
+    C_s=compute_C_minus_C0(lambdas,v,lambda_plus)
+    
+    mygraph= nx.from_numpy_array(np.abs(C_s))
+    partition = community.community_louvain.best_partition(mygraph)
+
+    DF=pd.DataFrame.from_dict(partition,orient="index")
+    return(DF)
+
