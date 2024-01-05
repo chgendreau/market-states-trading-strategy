@@ -37,3 +37,6 @@ def plot_recdf(logrets):
 
 #do other stylized facts functions
 print('hello world')
+
+#print Charles
+print('Charles')
