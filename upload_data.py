@@ -129,6 +129,7 @@ def load_TRTH_bbo(filename,
         
     return DF
 
+import time
 #@dask.delayed
 def load_merge_trade_bbo(ticker,date,
                          country="US",
@@ -142,7 +143,7 @@ def load_merge_trade_bbo(ticker,date,
     """
     Loads trade and bbo files and merges them into a single dataframe.
     """
-    
+
     file_trade=dirBase+"/"+country+"/trade/"+ticker+"/"+str(date.date())+"-"+ticker+"-trade."+suffix
     file_bbo=file_trade.replace("trade","bbo")
     trades=load_TRTH_trade(file_trade)
@@ -211,7 +212,7 @@ def get_all_dates(ticker, dirBase = "data/raw/equities/", country = "US"):
 
     return dates
 
-#@dask.delayed
+@dask.delayed
 def load_all_dates(ticker, start_date = pd.to_datetime('2004-01-01'), end_date = pd.to_datetime('2023-12-31'), country = "US", dirBase="data/raw/equities/", suffix="parquet", suffix_save=None, dirSaveBase="data/clean/equities/events", saveOnly=False, doSave=False):
     """
     Loads all data from start_date to end_date for a given ticker
@@ -232,7 +233,7 @@ def load_all_dates(ticker, start_date = pd.to_datetime('2004-01-01'), end_date =
     
     return all_events
 
-@dask.delayed
+#@dask.delayed
 def load_all(start_date = pd.to_datetime('2004-01-01'), end_date = pd.to_datetime('2023-12-31'), tickers:list = None, country = "US", dirBase="data/raw/equities/", suffix="parquet", suffix_save=None, dirSaveBase="data/clean/equities/events", saveOnly=False, doSave=False):
     """
     Loads all data from start_date to end_date  
@@ -247,11 +248,13 @@ def load_all(start_date = pd.to_datetime('2004-01-01'), end_date = pd.to_datetim
         all_tickers = get_all_tickers(dirBase = dirBase, country = country)
     else:
         all_tickers = tickers
-    for ticker in all_tickers:
-        delayed_event = load_all_dates(ticker = ticker, start_date=start_date, end_date = end_date, country = country, dirBase = dirBase, suffix = suffix, suffix_save = suffix_save, dirSaveBase = dirSaveBase, saveOnly = saveOnly, doSave = doSave)
-        delayed_events_list.append(delayed_event)
+
+    allpromises = [load_all_dates(ticker, start_date = start_date, end_date = end_date, country = country, dirBase = dirBase, suffix = suffix, suffix_save = suffix_save, dirSaveBase = dirSaveBase, saveOnly = saveOnly, doSave = doSave) for ticker in all_tickers]
+    #for ticker in all_tickers:
+        #delayed_event = load_all_dates(ticker = ticker, start_date=start_date, end_date = end_date, country = country, dirBase = dirBase, suffix = suffix, suffix_save = suffix_save, dirSaveBase = dirSaveBase, saveOnly = saveOnly, doSave = doSave)
+        #delayed_events_list.append(delayed_event)
     
-    events = dask.compute(*delayed_events_list)
-    all_events = pd.concat(events, axis = 0)
+    all_events = dask.compute(*allpromises)
+    all_events = pd.concat(all_events, axis = 0)
 
     return all_events
