@@ -407,3 +407,12 @@ def load_all_dask(start_date = pd.to_datetime('2004-01-01'), end_date = pd.to_da
             return saved   
 
     return all_events
+
+
+def fill_price_with_mid(df):
+    """
+    Replaces the price by the mid price if it is a NaN
+    """
+    df['trade_price'] = df['trade_price'].fillna(df['mid-price'])
+    return df
+
