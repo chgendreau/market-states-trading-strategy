@@ -64,7 +64,6 @@ def load_TRTH_trade(filename,
         print("DF does not exist")
         print(e)
         return None
-
     
     if DF.shape[0]==0:
         return None
@@ -84,7 +83,12 @@ def load_TRTH_trade(filename,
     if merge_sub_trades:
            DF=DF.groupby(DF.index).agg(trade_price=pd.NamedAgg(column='trade-price', aggfunc='mean'),
                                        trade_volume=pd.NamedAgg(column='trade-volume', aggfunc='sum'))
-    
+    ########################################################################################
+    #Is it good to pu it here?
+    #DF.dropna(inplace=True, axis=0)
+    DF = DF.resample('1s').last()
+    ########################################################################################
+
     return DF
 
 #@dask.delayed
@@ -127,7 +131,11 @@ def load_TRTH_bbo(filename,
     if merge_sub_trades:
         DF=DF.groupby(DF.index).last()
     
-
+    ########################################################################################
+    #Is it good to pu it here?
+    #DF.dropna(inplace=True, axis=0)
+    DF = DF.resample('1s').last()
+    ########################################################################################
         
     return DF
 
@@ -157,11 +165,11 @@ def load_merge_trade_bbo(ticker,date,
     
     events=trades.join(bbos,how="outer")
     #add day to events
-    events['day'] = events.index.date
+    #events['day'] = events.index.date
     #add time to events
-    events['time'] = events.index.time
+    #events['time'] = events.index.time
     #add ticker to events
-    events['ticker'] = ticker
+    #events['ticker'] = ticker
     
     if doSave:
         dirSave=dirSaveBase+"/"+country+"/"+ticker
@@ -192,22 +200,22 @@ def load_merge_trade_bbo(ticker,date,
     return events
 
 import glob
-def get_all_tickers(dirBase = "data/raw/equities/", country = "US"):
+def get_all_tickers(dirBase = "data/raw/equities", country = "US", type = 'trade'):
     """
     Returns a list of all the tickers in the given directory
     """
     #find tickers in data folder
-    data_folder = dirBase + country + '/trade/*'
+    data_folder = dirBase +'/'+ country + '/' + type + '/*'
     tickers = [f.split('\\')[-1].split('_')[0] for f in glob.glob(data_folder)]
     return tickers
 
 import re
-def get_all_dates(ticker, dirBase = "data/raw/equities/", country = "US"):
+def get_all_dates(ticker, dirBase = "data/raw/equities", country = "US"):
     """
     Returns a list of all the dates for which there is data for a given ticker
     """
     #find tickers in data folder
-    data_folder = dirBase + country + '/trade/' + ticker + '/*'
+    data_folder = dirBase +"/"+ country + '/trade/' + ticker + '/*'
     date_pattern = r'(\d{4}-\d{2}-\d{2})'
 
     dates = [pd.to_datetime(re.search(date_pattern, os.path.basename(f)).group(1)) if re.search(date_pattern, os.path.basename(f)) else None for f in glob.glob(data_folder)]
@@ -227,8 +235,19 @@ def load_all_dates(ticker, start_date = pd.to_datetime('2004-01-01'), end_date =
     all_dates = get_all_dates(ticker, dirBase = dirBase, country = country)
     all_dates = [date for date in all_dates if date >= start_date and date <= end_date]
     allpromises=[load_merge_trade_bbo(ticker, date, country = country, dirBase = dirBase, suffix = suffix) for date in all_dates]
+    #remove None values
+    allpromises = [x for x in allpromises if x is not None]
     #all_events = dask.compute(*allpromises) 
-    all_events = pd.concat(allpromises, axis = 0) 
+    try:
+        all_events = pd.concat(allpromises, axis = 0)
+    except:
+        print("No data in the given period for ticker " + ticker)
+        return None
+
+    #adding info to dataframe
+    all_events['day'] = all_events.index.date
+    all_events['ticker'] = ticker
+    all_events['mid-price'] = (all_events['bid-price'] + all_events['ask-price'])/2
 
     if doSave:
         dirSave=dirSaveBase+"/"+country+"/"+ticker
@@ -279,19 +298,21 @@ def load_all(start_date = pd.to_datetime('2004-01-01'), end_date = pd.to_datetim
     else:
         all_tickers = tickers
 
-    start_time = time.time()
+        #start_time = time.time()
     allpromises = [load_all_dates(ticker, start_date = start_date, end_date = end_date, country = country, dirBase = dirBase, suffix = suffix) for ticker in all_tickers]
+
     
-    
-    #all_events = dask.compute(*allpromises)
-    end_time = time.time()
-    print("Time to compute all data: ", end_time - start_time)
+    all_events_list = dask.compute(*allpromises)
+    #remove None values
+    all_events_list = [x for x in all_events_list if x is not None]
+    #end_time = time.time()
+    #print("Time to compute all data: ", end_time - start_time)
     if show_parallelization_structure :
         dask.visualize(*allpromises, filename='load_all_parallel_structure.png')
 
-    all_events = pd.concat(allpromises, axis = 0)
-    end_time_concat = time.time()
-    print("Time to concat all data: ", end_time_concat - end_time)
+    all_events = pd.concat(all_events_list, axis = 0)
+    #end_time_concat = time.time()
+    #print("Time to concat all data: ", end_time_concat - end_time)
     #all_events = pd.concat(allpromises, axis = 0)
 
     if doSave:
