@@ -6,7 +6,7 @@ import pytz
 import glob
 import re
 import os
-import vaex
+# import vaex
 import dask
 import dask.dataframe as dd
 
@@ -184,7 +184,7 @@ def load_merge_trade_bbo(ticker,date,
 
         saved=False
         if suffix=="arrow":
-            events=vaex.from_pandas(events,copy_index=True)
+            # events=vaex.from_pandas(events,copy_index=True)
             events.export_arrow(file_events)
             saved=True
         if suffix=="parquet":
@@ -262,7 +262,7 @@ def load_all_dates(ticker, start_date = pd.to_datetime('2004-01-01'), end_date =
 
         saved=False
         if suffix=="arrow":
-            all_events=vaex.from_pandas(all_events,copy_index=True)
+            # all_events=vaex.from_pandas(all_events,copy_index=True)
             all_events.export_arrow(file_events)
             saved=True
         if suffix=="parquet":
@@ -328,7 +328,7 @@ def load_all(start_date = pd.to_datetime('2004-01-01'), end_date = pd.to_datetim
 
         saved=False
         if suffix=="arrow":
-            all_events=vaex.from_pandas(all_events,copy_index=True)
+            # all_events=vaex.from_pandas(all_events,copy_index=True)
             all_events.export_arrow(file_events)
             saved=True
         if suffix=="parquet":
@@ -392,7 +392,7 @@ def load_all_dask(start_date = pd.to_datetime('2004-01-01'), end_date = pd.to_da
 
         saved=False
         if suffix=="arrow":
-            all_events=vaex.from_pandas(all_events,copy_index=True)
+            # all_events=vaex.from_pandas(all_events,copy_index=True)
             all_events.export_arrow(file_events)
             saved=True
         if suffix=="parquet":

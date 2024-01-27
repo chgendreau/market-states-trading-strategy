@@ -1,7 +1,10 @@
 import pandas as pd
 import numpy as np
-
 import matplotlib.pyplot as plt
+from numpy import linalg as LA
+import math
+import networkx as nx
+import community
 #plt.rcParams['text.usetex'] = True
 
 def plot_logreturns(df, plot = False):
@@ -67,5 +70,5 @@ def LouvainCorrelationClustering(R):   # R is a matrix of return
     partition = community.community_louvain.best_partition(mygraph)
 
     DF=pd.DataFrame.from_dict(partition,orient="index")
-    return(DF)
+    return DF, mygraph, partition 
 
