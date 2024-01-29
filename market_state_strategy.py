@@ -55,6 +55,8 @@ def market_state_strat_upgraded(r, seed=10): #matrix of log returns
     plt.show()
 
 def strat_eval(ret):
+    #robust sharp ratio
+    
     
     return
 
