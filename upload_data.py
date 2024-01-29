@@ -1,14 +1,16 @@
 
 from email.utils import parsedate_to_datetime
+from textwrap import fill
 from tracemalloc import start
 import pandas as pd
 import pytz
 import glob
 import re
 import os
-# import vaex
+import vaex
 import dask
 import dask.dataframe as dd
+import numpy as np
 
 
 #Defining functions to clean timestamp of multiple files
@@ -27,12 +29,27 @@ def file_clean_timestamp(file_path):
     df = clean_timestamp(df)
     return df
 
-def upload_clean_data(data_folder_path, dask_cores = 8):
+#helper function to clean price in bbo files
+def clean_values(value):
+    try:
+        return float(value)
+    except ValueError:
+        return np.nan
+
+
+def upload_clean_data(data_folder_path):
     """
     Uploads all clean data from a folder into a single pandas dataframe.
     """
     allfiles = glob.glob(data_folder_path + "/*")
-    return None
+    all_data = pd.DataFrame()
+    for file in allfiles:
+        df = pd.read_parquet(file, engine='pyarrow')
+        try:
+            all_data = pd.concat([all_data, df], axis=0)
+        except NameError:
+            all_data = df
+    return all_data
 
 #@dask.delayed
 def load_TRTH_trade(filename,
@@ -86,7 +103,8 @@ def load_TRTH_trade(filename,
     ########################################################################################
     #Is it good to pu it here?
     #DF.dropna(inplace=True, axis=0)
-    DF = DF.resample('1s').last()
+    #DF = DF.resample('1s').last()
+    #DF = DF.resample('1s').last()
     ########################################################################################
 
     return DF
@@ -130,11 +148,14 @@ def load_TRTH_bbo(filename,
         
     if merge_sub_trades:
         DF=DF.groupby(DF.index).last()
+
+    for column in ["bid-price","bid-volume","ask-price","ask-volume"]:
+        DF[column]=DF[column].apply(clean_values)
     
     ########################################################################################
-    #Is it good to pu it here?
+    #Is it good to put it here?
     #DF.dropna(inplace=True, axis=0)
-    DF = DF.resample('1s').last()
+    #DF = DF.resample('1s').last()
     ########################################################################################
         
     return DF
@@ -223,7 +244,9 @@ def get_all_dates(ticker, dirBase = "data/raw/equities", country = "US"):
     return dates
 
 @dask.delayed
-def load_all_dates(ticker, start_date = pd.to_datetime('2004-01-01'), end_date = pd.to_datetime('2023-12-31'), country = "US", dirBase="data/raw/equities/", suffix="parquet", suffix_save=None, dirSaveBase="data/clean/equities/events", saveOnly=False, doSave=False):
+def load_all_dates(ticker, start_date = pd.to_datetime('2004-01-01'), end_date = pd.to_datetime('2023-12-31'), 
+                   country = "US", dirBase="data/raw/equities/", suffix="parquet", 
+                   suffix_save=None, dirSaveBase="data/clean/equities/events", saveOnly=False, doSave=False):
     """
     Loads all data from start_date to end_date for a given ticker
     
@@ -245,9 +268,16 @@ def load_all_dates(ticker, start_date = pd.to_datetime('2004-01-01'), end_date =
         return None
 
     #adding info to dataframe
-    all_events['day'] = all_events.index.date
+    #all_events['day'] = all_events.index.date
     all_events['ticker'] = ticker
-    all_events['mid-price'] = (all_events['bid-price'] + all_events['ask-price'])/2
+    
+    ###### SHOULD BE REMOVED ######
+    #all_events['mid-price'] = (all_events['bid-price'] + all_events['ask-price'])/2
+    #all_events = fill_price_with_mid(all_events)
+    #vwap = all_events.resample('1min').apply(lambda x: (x.trade_price * x.trade_volume).sum() / x.trade_volume.sum())
+    #all_events['vwap'] = vwap
+    #all_events.resample('1min').last()
+    ###############################
 
     if doSave:
         dirSave=dirSaveBase+"/"+country+"/"+ticker
@@ -262,7 +292,7 @@ def load_all_dates(ticker, start_date = pd.to_datetime('2004-01-01'), end_date =
 
         saved=False
         if suffix=="arrow":
-            # all_events=vaex.from_pandas(all_events,copy_index=True)
+            all_events=vaex.from_pandas(all_events,copy_index=True)
             all_events.export_arrow(file_events)
             saved=True
         if suffix=="parquet":
@@ -281,6 +311,7 @@ def load_all_dates(ticker, start_date = pd.to_datetime('2004-01-01'), end_date =
 #@dask.delayed
 def load_all(start_date = pd.to_datetime('2004-01-01'), end_date = pd.to_datetime('2023-12-31'), 
              tickers:list = None, 
+
              show_parallelization_structure=False,
              country = "US", dirBase="data/raw/equities/", suffix="parquet", 
              suffix_save=None, dirSaveBase="data/clean/equities/events", saveOnly=False, doSave=False):
@@ -300,8 +331,7 @@ def load_all(start_date = pd.to_datetime('2004-01-01'), end_date = pd.to_datetim
 
         #start_time = time.time()
     allpromises = [load_all_dates(ticker, start_date = start_date, end_date = end_date, country = country, dirBase = dirBase, suffix = suffix) for ticker in all_tickers]
-
-    
+   
     all_events_list = dask.compute(*allpromises)
     #remove None values
     all_events_list = [x for x in all_events_list if x is not None]
@@ -416,3 +446,5 @@ def fill_price_with_mid(df):
     df['trade_price'] = df['trade_price'].fillna(df['mid-price'])
     return df
 
+def load_trade_prices():
+    return 0
