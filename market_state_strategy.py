@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from statsmodels.stats import multitest
 from scipy import stats
+from marsili_giada_clustering import aggregate_clusters
 
 def market_state_strat(r): #matrix of log returns
     T=int(np.floor(r.shape[1]/3))
@@ -27,20 +28,22 @@ def market_state_strat(r): #matrix of log returns
     plt.ylabel('USD')
     plt.title('Cumulative_performance')
 
-def market_state_strat_upgraded(r, trend_measure='med_HL', seed=10): #matrix of log returns
+def market_state_strat_upgraded(r, clustering='Louvian', trend_measure='med_HL', seed=10): #matrix of log returns
     np.random.seed(seed)
 
     T=int(np.floor(r.shape[1]/3))
     ret=[0]
+    pos=np.sign(np.zeros(r.shape[1]))
     for t in range(T+1,r.shape[0]):
         R = r.iloc[t-T:t]
-        DF = LouvainCorrelationClustering(R.T)
-        cur_state=DF.iloc[-1][0]
+        if clustering=='Louvian':
+            DF = LouvainCorrelationClustering(R.T)
+            cur_state=DF.iloc[-1][0]
+        # else:
+        #     clusters = aggregate_clusters(C, only_log_likelihood_improving_merges=False)
         I = DF[DF[0]==cur_state].index.tolist()
         my_list = [x+1 for x in I[:-1]]
-        if not my_list:
-            pos=np.sign(np.zeros(r.shape[1]))
-        else:
+        if my_list:
             if trend_measure=='med_HL':
                 ar=med_HL(R.iloc[my_list])
             elif trend_measure=='med':
