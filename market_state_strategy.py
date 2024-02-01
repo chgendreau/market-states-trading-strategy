@@ -97,4 +97,14 @@ def FDR(data, alpha=0.05, null_mean=0):
 
     return rej
 
+def _cal_w(R, e, is_BAHC): # T by N
+    if is_BAHC:
+        x=R.T
+        C=filterCovariance(x.values, is_correlation=False)   
+    else:
+        C=R.cov()
+    inv_cov = np.linalg.pinv(C)
+    min_var_weights = (inv_cov @ e) / np.dot( e, inv_cov @ e)
+    return min_var_weights
+
 
