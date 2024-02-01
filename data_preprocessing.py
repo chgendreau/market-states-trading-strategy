@@ -55,46 +55,6 @@ def save_vwap_trade(dirBase = "E:/FinancialData/sp100_2004-8/clean/events/US", d
         vwap_df.export_parquet(vwap_file_name,use_deprecated_int96_timestamps=True)
 
 
-#defined to compare the speed of vaex and pandas for these computations
-def save_vwap_trade_pandas(dirBase="E:/FinancialData/sp100_2004-8/clean/events/US", 
-                           dirSaveBase="E:/FinancialData/sp100_2004-8/clean/vwap/trade"):
-    """
-    Calculates and saves vwap (Volume Weighted Average Price) of the trade price over a 1 minute tick to parquet file using pandas.
-    """
-    # Extracting all file names
-    file_pattern = os.path.join(dirBase, '*-to-*-events.parquet')
-    file_list = glob.glob(file_pattern)
-    
-    # Loop through files
-    print('Calculating and saving 1min-vwap for all available clean trade files')
-    for file in tqdm.tqdm(file_list):
-        # Loading file
-        alldata = pd.read_parquet(file)
-        
-        # Calculating vwap
-        # Keep only the trade events
-        df_trade = alldata.dropna(subset=['trade_price'])  
-        
-        # Ensure 'xltime' is a datetime type for grouping
-        #put index as a column
-        df_trade.reset_index(inplace=True)
-        #df_trade['xltime'] = pd.to_datetime(df_trade['xltime'])
-        df_trade['minute'] = df_trade['xltime'].dt.floor('T')  # nearest minute
-        
-        # Group by minute and ticker, then calculate VWAP
-        vwap_df = df_trade.groupby(by=['minute', 'ticker']).apply(
-            lambda x: pd.Series({
-                'vwap': (x['trade_price'] * x['trade_volume']).sum() / x['trade_volume'].sum()
-            })
-        ).reset_index()
-        
-        # Save to parquet file
-        vwap_file_name = os.path.join(dirSaveBase, 
-                                      re.sub('events', 'vwap-trade-1min', os.path.basename(file)))
-        
-        vwap_df.to_parquet(vwap_file_name, index=False)
-
-
 
 def save_vwa_bbo(dirBase = "E:/FinancialData/sp100_2004-8/clean/events/US", dirSaveBase = "E:/FinancialData/sp100_2004-8/clean/vwap/bbo", 
                     tick = '1min'):
