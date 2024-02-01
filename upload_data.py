@@ -1,4 +1,4 @@
-
+#Functions based on the one provided by Prof. Damien Challet
 from email.utils import parsedate_to_datetime
 from textwrap import fill
 from tracemalloc import start
@@ -7,7 +7,7 @@ import pytz
 import glob
 import re
 import os
-# import vaex
+import vaex
 import dask
 import dask.dataframe as dd
 import numpy as np
@@ -51,7 +51,7 @@ def upload_clean_data(data_folder_path):
             all_data = df
     return all_data
 
-#@dask.delayed
+
 def load_TRTH_trade(filename,
              tz_exchange="America/New_York",
              only_non_special_trades=True,
@@ -100,16 +100,10 @@ def load_TRTH_trade(filename,
     if merge_sub_trades:
            DF=DF.groupby(DF.index).agg(trade_price=pd.NamedAgg(column='trade-price', aggfunc='mean'),
                                        trade_volume=pd.NamedAgg(column='trade-volume', aggfunc='sum'))
-    ########################################################################################
-    #Is it good to pu it here?
-    #DF.dropna(inplace=True, axis=0)
-    #DF = DF.resample('1s').last()
-    #DF = DF.resample('1s').last()
-    ########################################################################################
 
     return DF
 
-#@dask.delayed
+
 def load_TRTH_bbo(filename,
              tz_exchange="America/New_York",
              only_regular_trading_hours=True,
@@ -151,17 +145,10 @@ def load_TRTH_bbo(filename,
 
     for column in ["bid-price","bid-volume","ask-price","ask-volume"]:
         DF[column]=DF[column].apply(clean_values)
-    
-    ########################################################################################
-    #Is it good to put it here?
-    #DF.dropna(inplace=True, axis=0)
-    #DF = DF.resample('1s').last()
-    ########################################################################################
         
     return DF
 
 import time
-#@dask.delayed
 def load_merge_trade_bbo(ticker,date,
                          country="US",
                          dirBase="data/raw/equities/",
@@ -271,7 +258,7 @@ def load_all_dates(ticker, start_date = pd.to_datetime('2004-01-01'), end_date =
     #all_events['day'] = all_events.index.date
     all_events['ticker'] = ticker
     
-    ###### SHOULD BE REMOVED ######
+    ###### REMOVED ######
     #all_events['mid-price'] = (all_events['bid-price'] + all_events['ask-price'])/2
     #all_events = fill_price_with_mid(all_events)
     #vwap = all_events.resample('1min').apply(lambda x: (x.trade_price * x.trade_volume).sum() / x.trade_volume.sum())
@@ -308,7 +295,7 @@ def load_all_dates(ticker, start_date = pd.to_datetime('2004-01-01'), end_date =
     
     return all_events
 
-#@dask.delayed
+
 def load_all(start_date = pd.to_datetime('2004-01-01'), end_date = pd.to_datetime('2023-12-31'), 
              tickers:list = None, 
 
@@ -329,21 +316,21 @@ def load_all(start_date = pd.to_datetime('2004-01-01'), end_date = pd.to_datetim
     else:
         all_tickers = tickers
 
-        #start_time = time.time()
+    #start_time = time.time()
     allpromises = [load_all_dates(ticker, start_date = start_date, end_date = end_date, country = country, dirBase = dirBase, suffix = suffix) for ticker in all_tickers]
    
-    all_events_list = dask.compute(*allpromises)
+    all_events_list = dask.compute(*allpromises) #comment to avoid parallelization
+
     #remove None values
-    all_events_list = [x for x in all_events_list if x is not None]
+    all_events_list = [x for x in all_events_list if x is not None] #comment to avoid parallelization
+    #all_events_list = [x for x in allpromises if x is not None] #uncomment to avoid parallelization
     #end_time = time.time()
     #print("Time to compute all data: ", end_time - start_time)
     if show_parallelization_structure :
         dask.visualize(*allpromises, filename='load_all_parallel_structure.png')
 
     all_events = pd.concat(all_events_list, axis = 0)
-    #end_time_concat = time.time()
-    #print("Time to concat all data: ", end_time_concat - end_time)
-    #all_events = pd.concat(allpromises, axis = 0)
+    #all_events = pd.concat(allpromises, axis = 0) #uncomment to avoid parallelization
 
     if doSave:
         dirSave=dirSaveBase+"/"+country
@@ -374,7 +361,7 @@ def load_all(start_date = pd.to_datetime('2004-01-01'), end_date = pd.to_datetim
 
     return all_events
 
-
+#Deprecated, used for tests
 def load_all_dask(start_date = pd.to_datetime('2004-01-01'), end_date = pd.to_datetime('2023-12-31'), 
              tickers:list = None, 
              show_parallelization_structure=False,
@@ -445,6 +432,3 @@ def fill_price_with_mid(df):
     """
     df['trade_price'] = df['trade_price'].fillna(df['mid-price'])
     return df
-
-def load_trade_prices():
-    return 0
