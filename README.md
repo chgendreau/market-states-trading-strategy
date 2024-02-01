@@ -13,7 +13,7 @@ The requirements are listed in the [requirements.txt](requirements.txt) file. To
 ``` bash
 pip install -r requirements.txt
 ```
-
+To run the code of the project one has to run the notebooks described below with the data provided in the hard-disk.
 ## Brief description of the repository
 
 ```         
@@ -27,6 +27,7 @@ fin-big-data_project/
 ├── [data_preprocessing.ipynb](data_preprocessing.ipynb)        # Notebook of the preprocessing of the data
 ├── [data_observation.ipynb](data_observation.ipynb)            # Notebook to observe the clean and processed data and to compute statistics 
 ├── [strateg_test.ipynb](strateg_test.ipynb)                    # Notebook containing all the strategies and their performance
+├── ResearchNotebooks/                                          # Folder with deprecated notebooks used for exploration and various tests
 |
 ├── [requirements.txt](requirements.txt)                        # Requirement files
 |
