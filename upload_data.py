@@ -7,7 +7,7 @@ import pytz
 import glob
 import re
 import os
-import vaex
+# import vaex
 import dask
 import dask.dataframe as dd
 import numpy as np

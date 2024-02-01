@@ -70,5 +70,5 @@ def LouvainCorrelationClustering(R):   # R is a matrix of return
     partition = community.community_louvain.best_partition(mygraph)
 
     DF=pd.DataFrame.from_dict(partition,orient="index")
-    return DF, mygraph, partition 
+    return DF
 
