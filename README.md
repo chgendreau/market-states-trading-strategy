@@ -1,35 +1,48 @@
-# fin-big-data_project
-EPFL - Financial Big Data Project - Autumn 2023
+# EPFL - Financial Big Data Project - Autumn 2023
 
-# Project: Building trading strategy using market states
+# Performance of Market States Based Trading Strategies
 
-## Find market states and trading signals
-- Start with us equities
-- 	Upload and clean data
-- 	divide in insample and outsample data
-- Eigenvalue clipping for the covariance
-- Find clusters from insample
-- In a certain time cluster the signal can be positive, neutral or negative and based on that we adapt the strategy -> We need to find the signal which is the average of the average return of the same type of market state in the past (previous day).
-- Hypothesis testing, H0: average return different from 0. If H0 not rejected, we can say if the (Same)signal is positive or negative. We use the T-statistic and a false-discovery rate (see last lecture).
-- Test clusters with outsample data
+Final project of the course MATH-525 Financial Big Data (EPFL, Fall 2023).
 
-## Evaluate and apply strategy
-- Build strategy update using the signal
-- Visualize the results (log returns plot, see lecture notes for other metrics like some heat map)
+The report is available [here](report.pdf).
 
-## Risk management step?
-- Do not concentrate on that
+## Installation and Requirements
 
-## Analysis and report
+The requirements are listed in the [requirements.txt](requirements.txt) file. To install them, run the following command in the root directory of the project:
 
+``` bash
+pip install -r requirements.txt
+```
+To run the code of the project one has to run the notebooks described below with the data provided in the hard-disk.
+## Brief description of the repository
 
-TO DO:
+```         
+fin-big-data_project/
+│
+├── [upload_data.py](upload_data.py)                            # Functions to upload and clean data
+├── [utils.py](utils.py)                                        # Various utils functions
+├── [data_preprocessing.py](data_preprocessing.py)              # Functions to further clean the data for pre-processing
+├── [market_state_strategy.py](market_state_strategy.py)        # Functions to implement the clustering and the strategies
+├── [data_cleaning.ipynb](data_cleaning.ipynb)                  # Notebook to clean the data
+├── [data_preprocessing.ipynb](data_preprocessing.ipynb)        # Notebook of the preprocessing of the data
+├── [data_observation.ipynb](data_observation.ipynb)            # Notebook to observe the clean and processed data and to compute statistics 
+├── [strateg_test.ipynb](strateg_test.ipynb)                    # Notebook containing all the strategies and their performance
+├── ResearchNotebooks/                                          # Folder with deprecated notebooks used for exploration and various tests
+|
+├── [requirements.txt](requirements.txt)                        # Requirement files
+|
+└── README.md 
+```
 
-- Data: US equities, crypto and or forex exchange?\\
-- Clean data\\
-- For different time frames (say 1 month?)\\
-	- Cluster for intraday data\\
-	- Derive a strategy, how? -> using market states returns (see slide 6, lecture 13)\\
-	- Backtest strategy\\
-- Visualise\\
-- Conclusion on our strategies?\\
+### Authors
+
+-   [Zetong Liu](https://github.com/ZetongLiu)
+-   [Charles Gendreau](https://github.com/kalos11)
+
+### Supervisors
+
+-   [Damien Challet](https://people.epfl.ch/damien.challet)
+
+-   [Federico Baldi Lanfranchi](https://people.epfl.ch/federico.baldilanfranchi)
+
+Last edited: 2024-02-01
