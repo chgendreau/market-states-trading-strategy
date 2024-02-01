@@ -243,7 +243,7 @@ def get_all_dates(ticker, dirBase = "data/raw/equities", country = "US"):
 
     return dates
 
-@dask.delayed
+#@dask.delayed
 def load_all_dates(ticker, start_date = pd.to_datetime('2004-01-01'), end_date = pd.to_datetime('2023-12-31'), 
                    country = "US", dirBase="data/raw/equities/", suffix="parquet", 
                    suffix_save=None, dirSaveBase="data/clean/equities/events", saveOnly=False, doSave=False):
@@ -308,7 +308,7 @@ def load_all_dates(ticker, start_date = pd.to_datetime('2004-01-01'), end_date =
     
     return all_events
 
-#@dask.delayed
+
 def load_all(start_date = pd.to_datetime('2004-01-01'), end_date = pd.to_datetime('2023-12-31'), 
              tickers:list = None, 
 
@@ -332,9 +332,11 @@ def load_all(start_date = pd.to_datetime('2004-01-01'), end_date = pd.to_datetim
         #start_time = time.time()
     allpromises = [load_all_dates(ticker, start_date = start_date, end_date = end_date, country = country, dirBase = dirBase, suffix = suffix) for ticker in all_tickers]
    
-    all_events_list = dask.compute(*allpromises)
+    #all_events_list = dask.compute(*allpromises) #comment to avoid parallelization
+
     #remove None values
-    all_events_list = [x for x in all_events_list if x is not None]
+    #all_events_list = [x for x in all_events_list if x is not None] #comment to avoid parallelization
+    all_events_list = [x for x in allpromises if x is not None] #uncomment to avoid parallelization
     #end_time = time.time()
     #print("Time to compute all data: ", end_time - start_time)
     if show_parallelization_structure :
