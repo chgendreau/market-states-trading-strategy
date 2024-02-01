@@ -6,6 +6,7 @@ import pandas as pd
 from statsmodels.stats import multitest
 from scipy import stats
 from marsili_giada_clustering import aggregate_clusters
+import seaborn as sns
 
 def market_state_strat(r): #matrix of log returns
     T=int(np.floor(r.shape[1]/3))
