@@ -324,8 +324,6 @@ def load_all(start_date = pd.to_datetime('2004-01-01'), end_date = pd.to_datetim
     #remove None values
     all_events_list = [x for x in all_events_list if x is not None] #comment to avoid parallelization
     #all_events_list = [x for x in allpromises if x is not None] #uncomment to avoid parallelization
-    #end_time = time.time()
-    #print("Time to compute all data: ", end_time - start_time)
     if show_parallelization_structure :
         dask.visualize(*allpromises, filename='load_all_parallel_structure.png')
 
@@ -345,7 +343,7 @@ def load_all(start_date = pd.to_datetime('2004-01-01'), end_date = pd.to_datetim
 
         saved=False
         if suffix=="arrow":
-            # all_events=vaex.from_pandas(all_events,copy_index=True)
+            all_events=vaex.from_pandas(all_events,copy_index=True)
             all_events.export_arrow(file_events)
             saved=True
         if suffix=="parquet":
